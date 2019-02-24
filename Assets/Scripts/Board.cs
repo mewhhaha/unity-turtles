@@ -40,6 +40,11 @@ public class OnTileCreated : UnityEvent<Transform, float>
 
 }
 
+public class OnTurtleCreated : UnityEvent<Turtle>
+{
+
+}
+
 public class OnWinner : UnityEvent<Turtle>
 {
 
@@ -55,6 +60,7 @@ public class Board : MonoBehaviour
     private OnCardCreated m_onCardCreated = new OnCardCreated();
     private OnCardDiscarded m_onCardDiscarded = new OnCardDiscarded();
     private OnTileCreated m_onTileCreated = new OnTileCreated();
+    private OnTurtleCreated m_onTurtleCreated = new OnTurtleCreated();
     private OnWinner m_onWinner = new OnWinner();
 
     public UnityAction<Turtle> OnWinner
@@ -84,6 +90,11 @@ public class Board : MonoBehaviour
     public UnityAction<Transform, float> OnTileCreated
     {
         set => m_onTileCreated.AddListener(value);
+    }
+
+    public UnityAction<Turtle> OnTurtleCreated
+    {
+        set => m_onTurtleCreated.AddListener(value);
     }
 
     public UnityAction<Card> OnCardDiscarded
@@ -205,7 +216,8 @@ public class Board : MonoBehaviour
     {
         var prefabs = Resources.LoadAll<Turtle>("Hexagons/Turtles");
         var indices = Enumerable.Range(0, prefabs.Length).ToList();
-        var turtles = prefabs.Zip(indices, (p, i) => Instantiate(p.gameObject, Vector3.up * 0.105f * i, Quaternion.identity)).ToList();
+        var turtles = prefabs.Zip(indices, (p, i) => Instantiate(p, Vector3.up * 0.105f * i, Quaternion.identity)).ToList();
+        turtles.ForEach(m_onTurtleCreated.Invoke);
     }
 
     public void BuildDeck()

@@ -40,13 +40,15 @@ public class View : MonoBehaviour
         m_colorPickSet = new Dictionary<Color, Card>();
         Init();
         Board.OnMove = MoveTurtle;
-        Player.OnPickCard = MoveCardToHand;
         Board.OnDeckBuilt = PlaceCardsInDeck;
         Board.OnCardCreated = InitializeCard;
         Board.OnTileCreated = MoveInTile;
         Board.OnCardDiscarded = DiscardCard;
         Board.OnWinner = ShowWinnerDialog;
+        Board.OnTurtleCreated = InitializeTurtle;
+        Player.OnPickCard = MoveCardToHand;
         Player.OnPickNonColorCard = ShowColorPickDialog;
+        
     }
 
     // Update is called once per frame
@@ -406,15 +408,7 @@ public class View : MonoBehaviour
         var turtleMaterial = frontRenderer.materials[1];
         var effectMaterial= frontRenderer.materials[2];
 
-        switch (card.Color)
-        {
-            case Color.Red: turtleMaterial.color = UnityEngine.Color.red; break;
-            case Color.Blue: turtleMaterial.color = UnityEngine.Color.blue; break;
-            case Color.Purple: turtleMaterial.color = new UnityEngine.Color(0.5f,0,0.5f,1); break;
-            case Color.Pink: turtleMaterial.color = new UnityEngine.Color(1,0.498f,0.611f,1); break;
-            case Color.Green: turtleMaterial.color = UnityEngine.Color.green; break;
-            default: turtleMaterial.color = UnityEngine.Color.white; break;
-        }
+        turtleMaterial.color = ToUnityColor(card.Color);
 
         Texture plus_one = card.Type == CardType.Last? Resources.Load<Texture>("Cards/Materials/plus_one_last") : Resources.Load<Texture>("Cards/Materials/plus_one");
         Texture plus_two = card.Type == CardType.Last ? Resources.Load<Texture>("Cards/Materials/plus_two_last") : Resources.Load<Texture>("Cards/Materials/plus_two");
@@ -536,7 +530,7 @@ public class View : MonoBehaviour
         }
     }
 
-    private void MoveTurtle(Transform turtle, Transform dest)
+    private void MoveTurtle(Transform turtle, Transform tile)
     {
         
         StartCoroutine(go());    
@@ -546,20 +540,22 @@ public class View : MonoBehaviour
             RaycastHit hit;
 
             Vector3 start = turtle.position;
-            Vector3 stop = dest.position;
-            if (!Physics.Raycast(stop + Vector3.up, Vector3.down, out hit, Mathf.Infinity))
+            if (!Physics.Raycast(tile.position + Vector3.up, Vector3.down, out hit, Mathf.Infinity))
             {
                 Debug.Log("Didn't hit anything!");
                 yield break;
             }
-            
+
+            var dest = hit.point + new Vector3(0, 0.15f, 0);
+
+
             for (float i = 0; i < 1; i += Time.deltaTime * 4)
             {
-                turtle.position = Vector3.Lerp(start, hit.point, i) + (Vector3.up * Mathf.Sin(i * Mathf.PI) / 4);
+                turtle.position = Vector3.Lerp(start, dest, i) + (Vector3.up * Mathf.Sin(i * Mathf.PI) / 4);
                 yield return null;
             }
 
-            turtle.position = hit.point;
+            turtle.position = dest;
         }
     }
 
@@ -568,5 +564,25 @@ public class View : MonoBehaviour
         card.gameObject.layer = 0;
         card.transform.SetParent(Board.transform);
         card.gameObject.SetActive(false);
+    }
+
+    private void InitializeTurtle(Turtle turtle)
+    {
+        var material = turtle.GetComponent<Renderer>().material;
+
+        material.color = ToUnityColor(turtle.Color);
+    }
+
+    private UnityEngine.Color ToUnityColor(Color color)
+    {
+        switch (color)
+        {
+            case Color.Red: return UnityEngine.Color.red; 
+            case Color.Blue: return UnityEngine.Color.blue; 
+            case Color.Purple: return new UnityEngine.Color(0.5f, 0, 0.5f, 1); 
+            case Color.Pink: return new UnityEngine.Color(1, 0.498f, 0.611f, 1); 
+            case Color.Green: return UnityEngine.Color.green; 
+            default: return UnityEngine.Color.white;
+        }
     }
 }
